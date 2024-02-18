@@ -1,5 +1,24 @@
 import boto3, time, urllib
 from botocore.exceptions import ClientError
+import os
+import json
+
+# Load environment variables, if not set, load testing values
+
+payer_accounts_json = os.getenv('PAYER_ACCOUNTS_JSON', '{"012345678901": "", "123456789012": "ACC1"}')
+payer_accounts = json.loads(payer_accounts_json)
+
+role_names_json = os.getenv('ROLE_NAMES_JSON', '["OrganizationAccountAccessRole", "MyOrg/ReadOnly", "MyOrg/Finance", "MyOrg/Administrator"]')
+roles = json.loads(role_names_json)
+
+s3_bucket_name = os.getenv('S3_BUCKET_NAME', 'org-account-switcher-bucket')
+role_session_name = os.getenv('ROLE_SESSION_NAME', 'RoleSwitcherLambda')
+cached_ou_names_json = os.getenv('CACHED_OU_NAMES_JSON', '{"ou-xxxx-xxxxxxx1": "OU 1", "ou-xxxx-xxxxxxx2": "OU 2", "ou-xxxx-xxxxxxx3": "OU 3", "ou-xxxx-xxxxxxx4": "OU 4"}')
+cached_ou_names = json.loads(cached_ou_names_json)
+
+assume_role_name = os.getenv('ASSUME_ROLE_NAME', 'AccountSwitcherLambdaRole')
+file_path_prefix = os.getenv('FILE_PATH_PREFIX', '/tmp/')
+manual_accounts_file_name = os.getenv('MANUAL_ACCOUNTS_FILE_NAME', 'accounts-not-yet-onboarded.dat')
 
 def main(event, context):
 
@@ -39,10 +58,6 @@ def main(event, context):
             "OrganizationAccountAccessRole",
             "MyOrg/ReadOnly",
             "MyOrg/Finance",
-            "MyOrg/EnterpriseSupport",
-            "MyOrg/SupportFirst",
-            "MyOrg/SupportSecond",
-            "MyOrg/PowerUser",
             "MyOrg/Administrator",
         ]
 
@@ -105,19 +120,6 @@ def get_accounts(client, prefix):
         "ou-xxxx-xxxxxxx2": "OU 2",
         "ou-xxxx-xxxxxxx3": "OU 3",
         "ou-xxxx-xxxxxxx4": "OU 4",
-        "ou-xxxx-xxxxxxx5": "OU 5",
-        "ou-xxxx-xxxxxxx6": "OU 6",
-        "ou-xxxx-xxxxxxx7": "OU 7",
-        "ou-xxxx-xxxxxxx8": "OU 8",
-        "ou-xxxx-xxxxxxx9": "OU 9",
-        "ou-xxxx-xxxxxx10": "OU 10",
-        "ou-xxxx-xxxxxx11": "OU 11",
-        "ou-xxxx-xxxxxx12": "OU 12",
-        "ou-xxxx-xxxxxx13": "OU 13",
-        "ou-xxxx-xxxxxx14": "OU 14",
-        "ou-xxxx-xxxxxx15": "OU 15",
-        "ou-xxxx-xxxxxx16": "OU 16",
-        "ou-xxxx-xxxxxx17": "OU 17",
     }
 
     for response in response_iterator:
