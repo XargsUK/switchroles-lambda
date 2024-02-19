@@ -271,3 +271,4 @@ def create_config(role, accounts, prefix=""):
     ).upload_file("/tmp/" + safeRoleName + "_awscli-config-prefixed.txt")
 
     return True
+

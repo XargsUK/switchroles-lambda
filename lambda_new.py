@@ -1,5 +1,6 @@
 import boto3
 import os
+import json
 
 def main_handler(event, context):
     # Configuration from environment variables
@@ -8,6 +9,7 @@ def main_handler(event, context):
     role_names = os.environ['ROLE_NAMES'].split(',')
     session_name = os.environ['SESSION_NAME']
     payer_account_ids = os.environ['PAYER_ACCOUNT_IDS'].split(',')
+    ou_overrides = os.environ['OU_OVERRIDES']
 
     # Local testing
     running_locally = os.environ.get('RUNNING_LOCALLY', 'true').lower() == 'true'
@@ -17,6 +19,8 @@ def main_handler(event, context):
     awscli_configs = {}
     awscli_prefixed_configs = {}
     browser_plugin_configs = {}
+
+    ou_overrides = parse_ou_overrides()
 
     for payer_account_id in payer_account_ids:
         assume_role_arn = f"arn:aws:iam::{payer_account_id}:role/{assume_role_name}"
@@ -30,7 +34,7 @@ def main_handler(event, context):
             print(f"Failed to list accounts for payer account {payer_account_id}.")
             continue
 
-        account_ou_mapping = get_organizational_units(credentials)
+        account_ou_mapping = get_organizational_units(credentials, ou_overrides)
         if not account_ou_mapping:
             print(f"Failed to get organizational units for payer account {payer_account_id}.")
             continue
@@ -136,22 +140,16 @@ def list_payer_accounts(credentials):
 
     return accounts
 
-def get_organizational_units(credentials):
-    """
-    Retrieves the organizational units (OUs) for each account in the AWS Organization.
-
-    Parameters:
-    - credentials (dict): Temporary security credentials with AccessKeyId, SecretAccessKey, and SessionToken.
-
-    Returns:
-    - dict: A mapping of account IDs to their organizational unit names and IDs.
-    """
+def get_organizational_units(credentials, ou_overrides):
     org_client = boto3.client(
         'organizations',
         aws_access_key_id=credentials['AccessKeyId'],
         aws_secret_access_key=credentials['SecretAccessKey'],
         aws_session_token=credentials['SessionToken'],
     )
+
+    # Convert the list of overrides into a dictionary for easier access
+    ou_overrides_dict = {ou['ouid']: ou for ou in ou_overrides}
 
     # Initialize a dictionary to hold account ID to OU mapping
     account_ou_mapping = {}
@@ -161,37 +159,34 @@ def get_organizational_units(credentials):
         roots = org_client.list_roots()['Roots']
         for root in roots:
             # Recursively list and process OUs under each root
-            process_ous(org_client, root['Id'], account_ou_mapping, parent_name='/')
+            process_ous(org_client, root['Id'], account_ou_mapping, parent_name='/', ou_overrides_dict=ou_overrides_dict)
     except Exception as e:
         print(f"Error retrieving organizational units: {e}")
         return None
 
     return account_ou_mapping
 
-def process_ous(org_client, parent_id, account_ou_mapping, parent_name):
-    """
-    Recursively processes OUs under a given parent (root or OU) to find account mappings.
-
-    Parameters:
-    - org_client: The Organizations client.
-    - parent_id (str): The ID of the parent (root or OU) under which to list OUs.
-    - account_ou_mapping (dict): The mapping of account IDs to OUs being built.
-    - parent_name (str): The hierarchical name of the parent for building OU paths.
-    """
+def process_ous(org_client, parent_id, account_ou_mapping, parent_name, ou_overrides_dict):
     # List organizational units for a parent ID
     paginator = org_client.get_paginator('list_organizational_units_for_parent')
     for page in paginator.paginate(ParentId=parent_id):
         for ou in page['OrganizationalUnits']:
-            # Build the OU path
-            ou_path = parent_name + ou['Name']
-            # List accounts for the current OU
-            accounts_page = org_client.list_accounts_for_parent(ParentId=ou['Id'])
-            for account in accounts_page['Accounts']:
-                # Map account ID to OU path and OU ID
-                account_ou_mapping[account['Id']] = {'OUName': ou_path, 'OUId': ou['Id']}
+            # Check if there's an override for the current OU
+            ou_override = ou_overrides_dict.get(ou['Id'])
+            if ou_override:
+                ou_name = ou_override['ouname'] if ou_override['ouname'] else None
+            else:
+                ou_name = ou['Name']
             
-            # Recursively process any child OUs
-            process_ous(org_client, ou['Id'], account_ou_mapping, ou_path + '/')
+            if ou_name:  # If OU name is not omitted
+                ou_path = parent_name + (ou_name.replace(' ', '_') if ou_name else '')
+                # Process accounts for the current OU
+                accounts_page = org_client.list_accounts_for_parent(ParentId=ou['Id'])
+                for account in accounts_page['Accounts']:
+                    account_ou_mapping[account['Id']] = {'OUName': ou_path, 'OUId': ou['Id']}
+                
+                # Recursively process any child OUs, maintaining overrides
+                process_ous(org_client, ou['Id'], account_ou_mapping, ou_path + '/', ou_overrides_dict)
 
 def generate_awscli_config(accounts, role_name, include_profile_prefix=False):
     """
@@ -320,6 +315,19 @@ def write_to_local(directory, role_name, config_content, config_type):
         print(f"Error writing to local directory: {e}")
         return False
 
+def parse_ou_overrides():
+    """
+    Parse the OU_OVERRIDES environment variable and return the parsed JSON.
+
+    Returns:
+        list: A list of OU overrides parsed from the environment variable.
+    """
+    ou_overrides_str = os.environ.get('OU_OVERRIDES', '[]')  
+    try:
+        return json.loads(ou_overrides_str)
+    except json.JSONDecodeError:
+        print("Error decoding OU_OVERRIDES JSON. Ensure it's properly formatted.")
+        return []
 
 if __name__ == '__main__':
     mock_event = {"Update": "True"}
