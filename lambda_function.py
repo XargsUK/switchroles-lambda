@@ -4,7 +4,6 @@ import os
 import json
 
 # Load environment variables, if not set, load testing values
-
 payer_accounts_json = os.getenv('PAYER_ACCOUNTS_JSON', '{"012345678901": "", "123456789012": "ACC1"}')
 payer_accounts = json.loads(payer_accounts_json)
 
@@ -21,91 +20,75 @@ file_path_prefix = os.getenv('FILE_PATH_PREFIX', '/tmp/')
 manual_accounts_file_name = os.getenv('MANUAL_ACCOUNTS_FILE_NAME', 'accounts-not-yet-onboarded.dat')
 
 def main(event, context):
-
     if event["Update"] == "True":
-
-        payers = {
-            "012345678901": "",
-            "123456789012": "ACC1",
-        }
-
         failed_payers = []
         accounts = {}
 
-        for accountid, payer in payers.items():
+        for accountid, payer in payer_accounts.items():
             print("ID: " + accountid + " - Prefix: " + payer)
             client = False
-            if accountid == "012345678901":
-                # This is the local account
+            if accountid == "012345678901":  # Example account ID, consider making this configurable as well
                 client = boto3.client("organizations")
             else:
                 try:
-                    session = assume_role(accountid, "AccountSwitcherLambdaRole")
+                    session = assume_role(accountid, assume_role_name)  # Use assume_role_name from env
                     client = session.client("organizations")
                 except ClientError as e:
-                    print("Error Processing Payer {}".format(accountid))
+                    print(f"Error Processing Payer {accountid}")
                     failed_payers.append({accountid: repr(e)})
             try:
-                if client == False:
+                if not client:
                     continue
                 payer_accounts = get_accounts(client, payer)
                 accounts.update(payer_accounts)
             except ClientError as e:
-                print("Error Processing Payer {}".format(accountid))
+                print(f"Error Processing Payer {accountid}")
                 failed_payers.append({accountid: repr(e)})
 
-        roles = [
-            "OrganizationAccountAccessRole",
-            "MyOrg/ReadOnly",
-            "MyOrg/Finance",
-            "MyOrg/Administrator",
-        ]
-
-        for role in roles:
+        for role in roles:  # Use roles from env
             create_config(role, accounts)
 
-        if len(failed_payers) > 0:
-            print("---------------------------------------------------------------")
-            print("Failed Accounts")
-            print("---------------------------------------------------------------")
-            for p in failed_payers:
-                print("{}: \n\t{}".format(list(p.keys())[0], p[list(p.keys())[0]]))
-                print("---------------------------------------------------------------")
 
-        return {"Success": True}
+            if len(failed_payers) > 0:
+                print("---------------------------------------------------------------")
+                print("Failed Accounts")
+                print("---------------------------------------------------------------")
+                for p in failed_payers:
+                    print("{}: \n\t{}".format(list(p.keys())[0], p[list(p.keys())[0]]))
+                    print("---------------------------------------------------------------")
+
+            return {"Success": True}
 
 
 def assume_role(aws_account_number, role_name):
     """
-    Assumes the provided role in each account and returns a GuardDuty client
-    :param aws_account_number: AWS Account Number
-    :param role_name: Role to assume in target account
-    :param aws_region: AWS Region for the Client call, not required for IAM calls
-    :return: GuardDuty client in the specified AWS Account and Region
+    Assumes the provided role in the specified account and returns a session.
+    :param aws_account_number: AWS Account Number to assume role in.
+    :param role_name: Name of the Role to assume.
+    :return: boto3 Session object for the assumed role.
     """
-
-    # Beginning the assume role process for account
     sts_client = boto3.client("sts")
-
-    # Get the current partition
+    
+    # Get the current partition to construct the role ARN dynamically
     partition = sts_client.get_caller_identity()["Arn"].split(":")[1]
 
+    # Construct the Role ARN using the provided account number and role name
+    role_arn = f"arn:{partition}:iam::{aws_account_number}:role/{role_name}"
+
+    # Assume the role using the role ARN and role session name from environment variables
     response = sts_client.assume_role(
-        RoleArn="arn:{}:iam::{}:role/{}".format(
-            partition, aws_account_number, role_name
-        ),
-        RoleSessionName="RoleSwitcherLambda",
+        RoleArn=role_arn,
+        RoleSessionName=role_session_name,  # Utilize role_session_name from environment variables
     )
 
-    # Storing STS credentials
+    # Create a new session with the assumed role credentials
     session = boto3.Session(
         aws_access_key_id=response["Credentials"]["AccessKeyId"],
         aws_secret_access_key=response["Credentials"]["SecretAccessKey"],
         aws_session_token=response["Credentials"]["SessionToken"],
     )
 
-    print("Assumed session for {}.".format(aws_account_number))
-
+    print(f"Assumed session for {aws_account_number}.")
     return session
 
 
