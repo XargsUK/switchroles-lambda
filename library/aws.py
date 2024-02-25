@@ -121,7 +121,7 @@ def process_ous(org_client, parent_id, account_ou_mapping, parent_name, ou_overr
             # Recursively process any child OUs
             process_ous(org_client, ou['Id'], account_ou_mapping, new_parent_name, ou_overrides)
 
-def process_accounts_for_payer(payer_account_id, config, account_ou_mapping, config_gen):
+def process_accounts_for_payer(payer_account_id, config, account_ou_mapping):
     assume_role_arn = f"arn:aws:iam::{payer_account_id}:role/{config['assume_role_name']}"
     credentials = assume_role(assume_role_arn, config['session_name'] + payer_account_id)
     if not credentials:

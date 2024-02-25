@@ -17,7 +17,7 @@ def main_handler(event, context):
     configs = {role_name: {'awscli': '', 'awscli_prefixed': '', 'browser_plugin': ''} for role_name in config['role_names']}
 
     for payer_account_id in config['payer_account_ids']:
-        accounts = aws.process_accounts_for_payer(payer_account_id, config, account_ou_mapping, config_gen)
+        accounts = aws.process_accounts_for_payer(payer_account_id, config, account_ou_mapping)
         if not accounts:
             continue
         for role_name in config['role_names']:
