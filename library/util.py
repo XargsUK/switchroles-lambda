@@ -34,3 +34,14 @@ def export_ou_information(ou_mapping, running_locally, s3_bucket=None, directory
         storage.write_ou_info_to_local(directory, ou_info_content)
     else:
         storage.write_ou_info_to_s3(s3_bucket, ou_info_content)
+
+def load_environment_config():
+    return {
+        's3_bucket': os.environ['S3_BUCKET'],
+        'assume_role_name': os.environ['ASSUME_ROLE'],
+        'role_names': os.environ['ROLE_NAMES'].split(','),
+        'session_name': os.environ['SESSION_NAME'],
+        'payer_account_ids': os.environ['PAYER_ACCOUNT_IDS'].split(','),
+        'ou_overrides': json.loads(os.environ['OU_OVERRIDES']),
+        'running_locally': os.environ.get('RUNNING_LOCALLY', 'true').lower() == 'true'
+    }

@@ -116,3 +116,14 @@ def write_ou_info_to_s3(bucket_name, ou_info_content):
     except Exception as e:
         print(f"Error uploading OU information to S3: {e}")
         return False
+    
+def write_configs(role_names, configs, running_locally, s3_bucket):
+    for role_name in role_names:
+        if running_locally:
+            write_to_local('.', role_name, configs[role_name]['awscli'], "awscli-config")
+            write_to_local('.', role_name, configs[role_name]['awscli_prefixed'], "awscli-config-prefixed")
+            write_to_local('.', role_name, configs[role_name]['browser_plugin'], "browser-plugin-config")
+        else:
+            write_to_s3(s3_bucket, role_name, configs[role_name]['awscli'], "awscli-config")
+            write_to_s3(s3_bucket, role_name, configs[role_name]['awscli_prefixed'], "awscli-config-prefixed")
+            write_to_s3(s3_bucket, role_name, configs[role_name]['browser_plugin'], "browser-plugin-config")

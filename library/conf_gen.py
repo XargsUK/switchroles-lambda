@@ -73,3 +73,11 @@ class ConfigGenerator:
             config_lines.append("")  # Add a newline for readability
 
         return "\n".join(config_lines)
+    
+    def generate_configs_for_role(self, role_name, accounts, account_ou_mapping, config_gen):
+        configs = {
+            'awscli': config_gen.generate_awscli_config(accounts, role_name),
+            'awscli_prefixed': config_gen.generate_awscli_config(accounts, role_name, include_profile_prefix=True),
+            'browser_plugin': config_gen.generate_browser_plugin_config(accounts, account_ou_mapping, role_name)
+        }
+        return configs
