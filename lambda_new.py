@@ -256,6 +256,9 @@ def generate_browser_plugin_config(accounts, account_ou_mapping, role_name):
     global ou_colors
     config_lines = []
 
+    # Sort accounts by OU Name 
+    accounts = sorted(accounts, key=lambda account: account_ou_mapping.get(account['Id'], {'OUName': 'Unknown'})['OUName'])
+
     for account in accounts:
         account_id = account['Id']
         account_name = account['Name'].replace(' ', '_')
