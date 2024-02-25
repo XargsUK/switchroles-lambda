@@ -2,7 +2,7 @@ import boto3
 import os
 from moto import mock_aws
 from unittest.mock import patch
-from lambda_new import main_handler  
+from lambda_handler import main_handler  
 import shutil
 
 
