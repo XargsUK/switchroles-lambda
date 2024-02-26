@@ -1,4 +1,3 @@
-import json
 from library import util, aws, storage
 from library.conf_gen import ConfigGenerator
 

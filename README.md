@@ -94,12 +94,15 @@ This python script can be run locally or deployed as an AWS Lambda function.
 
 | Name              | Description                                                    | Example                                             |
 |-------------------|----------------------------------------------------------------|-----------------------------------------------------|
-| s3_bucket         | Name of the S3 bucket to export to.                            | `awsconfigs-bucket`                                 |
-| assume_role_name  | Name of role used to assume into Management Accounts           | `AccountSwitcherLambdaRole`                         |
-| role_names        | Role names to generate configs for                             | `OrganizationAccountAccessRole,ManagedOrg/ReadOnly` |
-| session_name      | Session name when assuming the role in the management acccount | `RoleSwitcherLambdav2`                              |
-| payer_account_ids | List of AWS account IDs                                        | `0123456789012,1234567890123`                       |
+| S3_BUCKET         | The name of the S3 bucket where the configurations will be stored (if not running locally).                            | `awsconfigs-bucket`                                 |
+| ASSUME_ROLE  | The role name to be assumed in each payer account.        | `AccountSwitcherLambdaRole`                         |
+| ROLE_NAMES        | Comma-separated role names for which the configurations will be generated.                            | `Admin,Developer,ReadOnly` |
+| SESSION_NAME      |  The session name to use when assuming roles. | `RoleSwitcherLambdav2`                              |
+| PAYER_ACCOUNT_IDS | Comma-separated AWS payer account IDs.                                        | `123456789012,210987654321`                       |
+| OU_OVERRIDES      | JSON string of organizational unit (OU) ID to name mappings for overrides. | `{"ou-xyz1-abcdefgh":"Engineering","ou-xyz2-abcdefgh":"Marketing"}`                            |
 | running_locally   | Set true for Local execution, false for Lambda.                | `true`                                              |
+| AWS_REGION        | The AWS region to use for the Lambda function.                | `us-west-2`                                         |
+| AWS_PROFILE       | The AWS profile to use for the Lambda function.                | `default`                                           |
 
 #### Local Execution
 
