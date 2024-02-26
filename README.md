@@ -18,57 +18,32 @@
 
 ##  Quick Links
 
-> - [ Overview](#-overview)
-> - [ Features](#-features)
-> - [ Repository Structure](#-repository-structure)
-> - [ Modules](#-modules)
-> - [ Getting Started](#-getting-started)
->   - [ Installation](#-installation)
->   - [Running switchroles-lambda](#-running-switchroles-lambda)
-> - [ Contributing](#-contributing)
-> - [ License](#-license)
+> - [Overview](#overview)
+> - [Getting Started](#getting-started)
+>   - [Installation](#installation)
+>   - [Running switchroles-lambda](#running-switchroles-lambda)
+> - [Contributing](#contributing)
+> - [License](#license)
 
 ---
 
-##  Overview
+## Overview
 
 The switchroles-lambda project leverages AWS Lambda to streamline the generation of AWS configurations for accounts in Organizations. It provides a flexible and scalable solution for managing AWS resources across multiple accounts and regions. It is designed with [AWS Extend Switch Roles](https://chromewebstore.google.com/detail/aws-extend-switch-roles/jpmkfafbacpgapdghgdpembnojdlgkdl) and [AESR S3 Config Sender](https://github.com/XargsUK/aesr-s3-config-sender/) in mind. 
 
----
-
-##  Features
-
-|    |   Feature         | Description |
-|----|-------------------|---------------------------------------------------------------|
-| ⚙️  | **Architecture**  | The project follows a modular architecture utilizing AWS Lambda for serverless deployment.  |
-| 🧪 | **Testing**       | Testing frameworks include Moto for mock AWS services and responses for HTTP testing. |
-| ⚡️  | **Performance**   | The project demonstrates efficient resource utilization, optimizing execution speed and minimizing runtime overhead.  |
-| 📦 | **Dependencies**  | Key libraries and dependencies include Werkzeug, boto3, cryptography, and pydantic for enhanced functionality and data validation. These dependencies are crucial for seamless integration and execution. |
-
 
 ---
 
-##  Repository Structure
-
-```sh
-└── switchroles-lambda/
-    ├── LICENSE
-    ├── lambda_handler.py
-    ├── requirements.txt
-    └── testlambda.py
-```
-
----
-
-##  Getting Started
+## Getting Started
 
 ***Requirements***
 
 Ensure you have the following dependencies installed on your system:
 
 * **Python**: `version 3.10.12`
+* **boto3**: `version 1.34.43`
 
-###  Installation
+### Installation
 
 1. Clone the switchroles-lambda repository:
 
@@ -88,7 +63,7 @@ cd switchroles-lambda
 pip install -r requirements.txt
 ```
 
-###  Running `switchroles-lambda`
+### Running `switchroles-lambda`
 
 This python script can be run locally or deployed as an AWS Lambda function. 
 
@@ -120,8 +95,7 @@ Once you've set your environment variables the following command to run switchro
 python lambda_handler.py
 ```
 
-
-##  Contributing
+## Contributing
 
 Contributions are welcome! Here are several ways you can contribute:
 
@@ -155,9 +129,8 @@ Once your PR is reviewed and approved, it will be merged into the main branch.
 
 ---
 
-##  License
+## License
 
 This project is protected under the [MIT](https://choosealicense.com/licenses/mit/) License. 
 
 ---
-
